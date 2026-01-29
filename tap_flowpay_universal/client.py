@@ -1,12 +1,11 @@
 """REST client handling, including FlowpayUniversalStream base class."""
 
-import logging
 from functools import lru_cache
 from urllib.parse import urlparse
 
 from singer_sdk.streams import RESTStream
 
-from tap_flowpay_universal.auth import MissingCredentialConfigException, OAuth2Authenticator, ApiKeyAuthenticator
+from tap_flowpay_universal.auth import OAuth2Authenticator, ApiKeyAuthenticator
 
 
 class MissingConfig(Exception):
