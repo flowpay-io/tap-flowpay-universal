@@ -49,9 +49,6 @@ class TapFlowpayUniversal(Tap):
                    description="Optional tenant ID to specify a customer's operation"),
         th.Property("start_date", th.DateTimeType, required=True,
                    description="Start date for data extraction"),
-        th.Property("response_data_path", th.StringType, required=False,
-                   default="data",
-                   description="JSON path to extract records from response. Use 'data' for wrapped responses {\"data\": [...]}, or empty string for direct array responses [...]"),
     ).to_dict()
 
     def discover_streams(self):

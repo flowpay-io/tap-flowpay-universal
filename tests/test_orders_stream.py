@@ -21,7 +21,7 @@ def test_orders_stream_parsing_wrapped_response(orders_response, api_key_config)
 
 
 def test_orders_stream_parsing_plain_array(orders_response_plain_array, api_key_config):
-    """Test parsing orders from plain array response [...]."""
+    """Test parsing orders from plain array response [...] with auto-detection."""
     with patch("singer_sdk.streams.RESTStream._request") as mock_get:
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = orders_response_plain_array
@@ -52,14 +52,14 @@ def test_parse_response_fails_on_unrecognized_format(api_key_config):
 
 
 def test_pagination_stops_when_records_exceed_page_size(api_key_config, sample_order):
-    """Test that pagination stops when API returns more records than page_size."""
+    """Test that pagination stops when API returns more records than page_size (wrapped format)."""
     stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))
     
-    # Simulate API returning 500 records when page_size is 100
+    # Simulate API returning 500 records when page_size is 100 (wrapped format)
     many_records = [sample_order.copy() for _ in range(500)]
     
     mock_response = MagicMock()
-    mock_response.json.return_value = many_records
+    mock_response.json.return_value = {"data": many_records}
     
     next_token = stream.get_next_page_token(mock_response, None)
     
@@ -68,10 +68,10 @@ def test_pagination_stops_when_records_exceed_page_size(api_key_config, sample_o
 
 
 def test_pagination_continues_when_records_equal_page_size(api_key_config, sample_order):
-    """Test that pagination continues when records == page_size."""
+    """Test that pagination continues when records == page_size (plain array format)."""
     stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))
     
-    # Simulate API returning exactly page_size records
+    # Simulate API returning exactly page_size records (plain array format)
     exact_records = [sample_order.copy() for _ in range(stream.page_size)]
     
     mock_response = MagicMock()
@@ -84,14 +84,14 @@ def test_pagination_continues_when_records_equal_page_size(api_key_config, sampl
 
 
 def test_pagination_stops_when_records_less_than_page_size(api_key_config, sample_order):
-    """Test that pagination stops when records < page_size (last page)."""
+    """Test that pagination stops when records < page_size (last page, wrapped format)."""
     stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))
     
-    # Simulate API returning fewer than page_size records
+    # Simulate API returning fewer than page_size records (wrapped format)
     few_records = [sample_order.copy() for _ in range(50)]
     
     mock_response = MagicMock()
-    mock_response.json.return_value = few_records
+    mock_response.json.return_value = {"data": few_records}
     
     next_token = stream.get_next_page_token(mock_response, 0)
     

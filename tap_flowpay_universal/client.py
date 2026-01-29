@@ -79,11 +79,11 @@ class FlowpayUniversalStream(RESTStream):
         return headers
 
     def _extract_records(self, data):
-        """Extract records from response data based on response_data_path config.
+        """Extract records from response data, auto-detecting format.
         
-        Supports two formats based on response_data_path config:
-        - Empty string: expects plain array [{...}, {...}]
-        - Path string (e.g., "data", "results"): expects wrapped {"<path>": [{...}, {...}], ...}
+        Supports two formats:
+        - Plain array: [{...}, {...}]
+        - Wrapped: {"data": [{...}, {...}], ...}
         
         Args:
             data: Parsed JSON response data
@@ -91,20 +91,13 @@ class FlowpayUniversalStream(RESTStream):
         Returns:
             tuple: (records list, format_recognized bool)
         """
-        response_data_path = self.config.get("response_data_path", "data")
-        
-        # Empty path means expect direct array response
-        if not response_data_path:
-            if isinstance(data, list):
-                return data, True
+        if isinstance(data, list):
+            return data, True
+        elif isinstance(data, dict) and "data" in data:
+            # Use `or []` to handle {"data": null} case where .get() returns None
+            return data.get("data") or [], True
+        else:
             return [], False
-        
-        # Non-empty path means look for that key in dict response
-        if isinstance(data, dict) and response_data_path in data:
-            # Use `or []` to handle {path: null} case where .get() returns None
-            return data.get(response_data_path) or [], True
-        
-        return [], False
 
     def get_next_page_token(self, response, previous_token):
         """Return next page token supporting both cursor and count-based pagination.
@@ -179,11 +172,9 @@ class FlowpayUniversalStream(RESTStream):
         # Only fail if format is unrecognized and response has content
         # Legitimate empty responses (e.g., {"data": [], "total": 0}) are valid
         if not format_recognized and len(response.content) > 100:
-            response_data_path = self.config.get("response_data_path", "data")
-            expected_format = "a list" if not response_data_path else f"a dict with '{response_data_path}' key"
             raise RuntimeError(
                 f"API returned {len(response.content)} bytes but response format is not supported. "
-                f"Expected {expected_format}. Response preview: {str(data)[:500]}"
+                f"Expected a list or dict with 'data' key. Response preview: {str(data)[:500]}"
             )
         
         self.logger.info(f"Extracted {len(records)} records from response")
