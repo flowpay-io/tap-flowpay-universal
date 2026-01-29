@@ -9,7 +9,6 @@ class OrdersStream(FlowpayUniversalStream):
 
     name = "orders"
     primary_keys = ["id", "updatedAt"]
-    records_jsonpath = "$.[*]"
     replication_key = "updatedAt"
 
     @property

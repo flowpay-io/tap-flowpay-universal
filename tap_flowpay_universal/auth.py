@@ -125,8 +125,10 @@ class OAuth2Authenticator(APIAuthenticatorBase):
 
         self._tap._config["access_token"] = token_json["access_token"]
         self._tap._config["expires_in"] = expires_in
-        with open(self._tap.config_file, "w") as outfile:
-            json.dump(self._tap._config, outfile, indent=4)
+        # Persist tokens to config file if available (CLI mode)
+        if self._tap.config_file:
+            with open(self._tap.config_file, "w") as outfile:
+                json.dump(self._tap._config, outfile, indent=4)
 
 
 class ApiKeyAuthenticator(APIAuthenticatorBase):

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tap-flowpay-universal"
-version = "0.0.1"
+version = "1.1.0"
 description = "Singer tap for FlowpayUniversal, built with the Meltano Singer SDK."
 readme = "README.md"
 authors = ["hotglue <hello@hotglue.io>"]
@@ -68,3 +68,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 # CLI declaration
 tap-flowpay-universal = 'tap_flowpay_universal.tap:TapFlowpayUniversal.cli'
+
+[dependency-groups]
+dev = [
+    "pytest (>=7.0,<8.0)"
+]

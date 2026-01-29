@@ -21,7 +21,11 @@ class TapFlowpayUniversal(Tap):
         parse_env_config=False,
         validate_config=True,
     ) -> None:
-        self.config_file = config[0]
+        # Handle both dict config (tests) and list of file paths (CLI)
+        if isinstance(config, list) and len(config) > 0:
+            self.config_file = config[0]
+        else:
+            self.config_file = None
         super().__init__(config, catalog, state, parse_env_config, validate_config)
 
     config_jsonschema = th.PropertiesList(
@@ -45,6 +49,9 @@ class TapFlowpayUniversal(Tap):
                    description="Optional tenant ID to specify a customer's operation"),
         th.Property("start_date", th.DateTimeType, required=True,
                    description="Start date for data extraction"),
+        th.Property("response_data_path", th.StringType, required=False,
+                   default="data",
+                   description="JSON path to extract records from response. Use 'data' for wrapped responses {\"data\": [...]}, or empty string for direct array responses [...]"),
     ).to_dict()
 
     def discover_streams(self):
