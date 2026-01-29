@@ -12,21 +12,6 @@ def api_key_config():
     }
 
 @pytest.fixture
-def oauth_config():
-    """Fixture that provides a valid OAuth/JWT config."""
-    return {
-        "url": "https://test.flowpay.com/api/v1/orders",
-        "start_date": "2022-01-01T00:00:00Z",
-        "merchant_id": "test_merchant",
-        "auth_type": "JWT",
-        "client_id": "test_client_id",
-        "client_secret": "test_client_secret",
-        "audience": "https://api.flowpay.com",
-        "token_endpoint_url": "https://auth.flowpay.com/oauth/token",
-    }
-
-
-@pytest.fixture
 def orders_response():
     """Fixture to simulate a valid orders response wrapped in 'data'."""
     return {
