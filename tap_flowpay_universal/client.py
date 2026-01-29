@@ -95,7 +95,8 @@ class FlowpayUniversalStream(RESTStream):
         if isinstance(data, list):
             return data, True
         elif isinstance(data, dict) and "data" in data:
-            return data.get("data", []), True
+            # Use `or []` to handle {"data": null} case where .get() returns None
+            return data.get("data") or [], True
         else:
             return [], False
 
