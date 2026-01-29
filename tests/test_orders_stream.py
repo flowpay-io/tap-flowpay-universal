@@ -36,11 +36,11 @@ def test_orders_stream_parsing_plain_array(orders_response_plain_array, api_key_
         assert record["customerName"] == "Plain Array Customer"
 
 
-def test_parse_response_fails_when_no_records_extracted(api_key_config):
-    """Test that parse_response raises RuntimeError when API returns data but 0 records extracted."""
+def test_parse_response_fails_on_unrecognized_format(api_key_config):
+    """Test that parse_response raises RuntimeError when response format is unrecognized."""
     stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))
     
-    # Mock response with data but unsupported format
+    # Mock response with data but unsupported format (no "data" key)
     mock_response = MagicMock()
     mock_response.json.return_value = {"unsupported_key": [{"id": "123"}]}
     mock_response.content = b'{"unsupported_key": [{"id": "123"}]}' * 10  # > 100 bytes
@@ -48,7 +48,7 @@ def test_parse_response_fails_when_no_records_extracted(api_key_config):
     with pytest.raises(RuntimeError) as exc_info:
         list(stream.parse_response(mock_response))
     
-    assert "0 records were extracted" in str(exc_info.value)
+    assert "response format is not supported" in str(exc_info.value)
 
 
 def test_pagination_stops_when_records_exceed_page_size(api_key_config, sample_order):
@@ -97,9 +97,3 @@ def test_pagination_stops_when_records_less_than_page_size(api_key_config, sampl
     
     # Should return None (stop pagination) because 50 < 100
     assert next_token is None
-
-
-# Keep old test name as alias for backward compatibility
-def test_orders_stream_parsing(orders_response, api_key_config):
-    """Test the orders stream data parsing (alias for wrapped response test)."""
-    test_orders_stream_parsing_wrapped_response(orders_response, api_key_config)

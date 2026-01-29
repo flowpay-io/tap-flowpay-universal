@@ -16,9 +16,6 @@ class MissingConfig(Exception):
 class FlowpayUniversalStream(RESTStream):
     """FlowpayUniversal stream class."""
 
-    # Update this value if necessary or override `parse_response`.
-    records_jsonpath = "$[*]"
-    
     page_size = 100
 
 
@@ -82,6 +79,26 @@ class FlowpayUniversalStream(RESTStream):
             headers["User-Agent"] = self.config.get("user_agent")
         return headers
 
+    def _extract_records(self, data):
+        """Extract records from response data, auto-detecting format.
+        
+        Supports two formats:
+        - Plain array: [{...}, {...}]
+        - Wrapped: {"data": [{...}, {...}], ...}
+        
+        Args:
+            data: Parsed JSON response data
+            
+        Returns:
+            tuple: (records list, format_recognized bool)
+        """
+        if isinstance(data, list):
+            return data, True
+        elif isinstance(data, dict) and "data" in data:
+            return data.get("data", []), True
+        else:
+            return [], False
+
     def get_next_page_token(self, response, previous_token):
         """Return next page token supporting both cursor and count-based pagination.
         
@@ -104,7 +121,7 @@ class FlowpayUniversalStream(RESTStream):
             return data.get("next_page")  # Returns None if next_page is null
         
         # Mode 2: Count-based pagination - check response size
-        records = data if isinstance(data, list) else data.get("data", [])
+        records, _ = self._extract_records(data)
         record_count = len(records)
         
         if record_count > self.page_size:
@@ -147,28 +164,17 @@ class FlowpayUniversalStream(RESTStream):
     def parse_response(self, response):
         """Parse the response, auto-detecting format (plain array or wrapped in 'data').
         
-        Raises an error if API returned data but extraction yields nothing.
+        Raises an error if response format is unrecognized (not a list or dict with 'data' key).
         """
         data = response.json()
+        records, format_recognized = self._extract_records(data)
         
-        # Calculate response size for validation
-        response_size = len(response.content)
-        
-        # Auto-detect format and extract records
-        if isinstance(data, list):
-            # Plain array format: [{...}, {...}]
-            records = data
-        elif isinstance(data, dict) and "data" in data:
-            # Wrapped format: {"data": [{...}, {...}]}
-            records = data.get("data", [])
-        else:
-            records = []
-        
-        # Fail if API returned data but we extracted nothing
-        if response_size > 100 and len(records) == 0:
+        # Only fail if format is unrecognized and response has content
+        # Legitimate empty responses (e.g., {"data": [], "total": 0}) are valid
+        if not format_recognized and len(response.content) > 100:
             raise RuntimeError(
-                f"API returned {response_size} bytes but 0 records were extracted. "
-                f"Response format may not be supported. Response preview: {str(data)[:500]}"
+                f"API returned {len(response.content)} bytes but response format is not supported. "
+                f"Expected a list or dict with 'data' key. Response preview: {str(data)[:500]}"
             )
         
         self.logger.info(f"Extracted {len(records)} records from response")
