@@ -146,11 +146,9 @@ class FlowpayUniversalStream(RESTStream):
         if self._config.get("tenant_id"):
             params["tenantId"] = self._config.get("tenant_id")
 
-        # Always send page parameter (0-based per spec)
+        # Only send page parameter for subsequent requests (pagination)
         if next_page_token is not None:
             params["page"] = next_page_token
-        else:
-            params["page"] = 0
         
         params["size"] = self.page_size
         return params
