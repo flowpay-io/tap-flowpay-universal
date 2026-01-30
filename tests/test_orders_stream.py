@@ -51,6 +51,38 @@ def test_parse_response_fails_on_unrecognized_format(api_key_config):
     assert "response format is not supported" in str(exc_info.value)
 
 
+def test_pagination_uses_nextPage_cursor_when_provided(api_key_config, sample_order):
+    """Test that pagination uses nextPage value from API response (cursor-based)."""
+    stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))
+    
+    # Simulate API returning records with nextPage cursor
+    records = [sample_order.copy() for _ in range(100)]
+    
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"data": records, "nextPage": 2}
+    
+    next_token = stream.get_next_page_token(mock_response, None)
+    
+    # Should return 2 (the nextPage value from API)
+    assert next_token == 2
+
+
+def test_pagination_stops_when_nextPage_is_null(api_key_config, sample_order):
+    """Test that pagination stops when nextPage is null (last page, cursor-based)."""
+    stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))
+    
+    # Simulate API returning records with nextPage: null (last page)
+    records = [sample_order.copy() for _ in range(50)]
+    
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"data": records, "nextPage": None}
+    
+    next_token = stream.get_next_page_token(mock_response, 1)
+    
+    # Should return None because nextPage is null
+    assert next_token is None
+
+
 def test_pagination_stops_when_records_exceed_page_size(api_key_config, sample_order):
     """Test that pagination stops when API returns more records than page_size (wrapped format)."""
     stream = OrdersStream(tap=TapFlowpayUniversal(config=api_key_config))

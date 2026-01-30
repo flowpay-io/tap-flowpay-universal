@@ -103,8 +103,8 @@ class FlowpayUniversalStream(RESTStream):
         """Return next page token supporting both cursor and count-based pagination.
         
         Pagination modes (per spec):
-        1. Cursor-based: If API returns `next_page` in response, use that value
-        2. Count-based: If no `next_page`, increment page number while response 
+        1. Cursor-based: If API returns `nextPage` in response, use that value
+        2. Count-based: If no `nextPage`, increment page number while response 
            contains exactly `page_size` records
         
         Args:
@@ -116,9 +116,9 @@ class FlowpayUniversalStream(RESTStream):
         """
         data = response.json()
         
-        # Mode 1: Cursor-based pagination - check for next_page in response
-        if isinstance(data, dict) and "next_page" in data:
-            return data.get("next_page")  # Returns None if next_page is null
+        # Mode 1: Cursor-based pagination - check for nextPage in response
+        if isinstance(data, dict) and "nextPage" in data:
+            return data.get("nextPage")  # Returns None if nextPage is null
         
         # Mode 2: Count-based pagination - check response size
         records, _ = self._extract_records(data)
